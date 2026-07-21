@@ -34,7 +34,7 @@ jobs:
 
     - name: Ejecutar el script en la nube
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
-        DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+        GITHUB_TOKEN: ${{ secrets.PRUEBAS_T }}
+        DB_CONNECTION_STRING: ${{ secrets.CONEXION }}
       run: |
         python script.py
