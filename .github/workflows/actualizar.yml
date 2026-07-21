@@ -2,9 +2,9 @@ name: Actualizar Excel Automático
 
 on:
   schedule:
-    # Programado para las 10:45 AM Hora de Chile (14:45 UTC)
+    # Programado a las 10:45 AM Hora de Chile (14:45 UTC)
     - cron: '45 14 * * *'
-  workflow_dispatch: # Mantiene el botón para ejecutar manualmente si quieres probarlo antes
+  workflow_dispatch: # Permite ejecutar el flujo manualmente desde la pestaña Actions
 
 jobs:
   ejecutar-script:
@@ -14,20 +14,27 @@ jobs:
     - name: Clonar el código del repositorio
       uses: actions/checkout@v4
 
-    - name: Instalar Python
+    - name: Configurar entorno de Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: Instalar librerías
+    - name: Instalar controlador Microsoft ODBC y dependencias de Python
       run: |
+        # 1. Agregar el repositorio oficial de Microsoft en Ubuntu
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+        curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+        
+        # 2. Instalar el driver oficial msodbcsql18 y unixodbc-dev
         sudo apt-get update
-        sudo apt-get install -y unixodbc-dev
+        sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
+        
+        # 3. Instalar librerías de Python
         pip install pandas openpyxl sqlalchemy pyodbc requests
 
     - name: Ejecutar el script en la nube
       env:
-        GITHUB_TOKEN: ${{ secrets.PRUEBAS_T }}
-        DB_CONNECTION_STRING: ${{ secrets.CONEXION }}
+        GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+        DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
       run: |
         python script.py
