@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import sys
+import urllib.parse
 from datetime import datetime
 import pandas as pd
 import requests
@@ -18,9 +19,26 @@ if not GITHUB_TOKEN or not DB_CONFIG_RAW:
     sys.exit(1)
 
 try:
+    # Leer variables desde el JSON
     db_config = json.loads(DB_CONFIG_RAW)
-    CONNECTION_URL = db_config["connection"]
+    
+    # Armar los parámetros de conexión de forma segura
+    params = urllib.parse.quote_plus(
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={db_config['server']};"
+        f"DATABASE={db_config['database']};"
+        f"UID={db_config['user']};"
+        f"PWD={db_config['password']};"
+        f"TrustServerCertificate=yes;"
+    )
+
+    # Crear la URL y extraer la tabla
+    CONNECTION_URL = f"mssql+pyodbc:///?odbc_connect={params}"
     NOMBRE_TABLA = db_config["tabla"]
+
+except KeyError as e:
+    print(f"Error: Falta el campo {e} en el JSON del secreto DB_CONNECTION_STRING.")
+    sys.exit(1)
 except Exception:
     print("Error: El secreto DB_CONNECTION_STRING no tiene un formato JSON válido.")
     sys.exit(1)
@@ -113,14 +131,14 @@ if __name__ == "__main__":
 
     print("Conectando a la base de datos y consultando información...")
     
-    # CONTROL DE EXCEPCIONES: Oculta el Traceback completo si hay un error
+    # Manejo de excepciones para evitar exponer la base de datos o contraseñas en logs
     try:
         engine = sqlalchemy.create_engine(CONNECTION_URL)
         query = f"SELECT * FROM {NOMBRE_TABLA}"
         df = pd.read_sql(query, con=engine)
     except Exception:
         print("\n[ERROR CRÍTICO]: No se pudo conectar a la base de datos o ejecutar la consulta.")
-        print("Verifica el Driver ODBC, el estado de la base de datos o los permisos.")
+        print("Verifica las credenciales en el Secreto, el estado de la base de datos o la conectividad de red.")
         sys.exit(1)
 
     df["Fecha y Hora Actualización"] = fecha_hora_exacta
