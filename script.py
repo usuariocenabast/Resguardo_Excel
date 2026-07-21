@@ -136,9 +136,8 @@ if __name__ == "__main__":
         engine = sqlalchemy.create_engine(CONNECTION_URL)
         query = f"SELECT * FROM {NOMBRE_TABLA}"
         df = pd.read_sql(query, con=engine)
-    except Exception:
-        print("\n[ERROR CRÍTICO]: No se pudo conectar a la base de datos o ejecutar la consulta.")
-        print("Verifica las credenciales en el Secreto, el estado de la base de datos o la conectividad de red.")
+    except Exception as e:
+        print(f"\n[DETALLE DEL ERROR]: {e}")
         sys.exit(1)
 
     df["Fecha y Hora Actualización"] = fecha_hora_exacta
